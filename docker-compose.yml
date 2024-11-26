@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  flask-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: flask-app
+    ports:
+      - "5001:5001"
+    networks:
+      - mlflow-net
+
+  train-service:
+    build:
+      context: ./train  
+    volumes:
+      - ./mlruns:/app/mlruns
+    environment:
+      - MLFLOW_TRACKING_URI=/app/mlruns
+    depends_on:
+      - mlflow-ui
+    networks:
+      - mlflow-net
+    
+  mlflow-ui:
+    image: bitnami/mlflow:latest
+    ports:
+      - "5002:5000"
+    volumes:
+      - ./mlruns:/app/mlruns
+    entrypoint: ["mlflow", "ui"]  # Đặt entrypoint trực tiếp
+    command: ["--backend-store-uri", "file:/app/mlruns", "--host", "0.0.0.0"]
+
+
+volumes:
+  mlruns:
+networks:
+  mlflow-net:
